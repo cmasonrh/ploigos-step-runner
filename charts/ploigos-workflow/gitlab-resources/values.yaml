@@ -1,0 +1,42 @@
+# NOTE
+# These are all global so that user doesn't have to know which child chart actually uses them
+# and rather just interacts with the cohesive system.
+#
+# Would have rather had them be scoped to the parent Chart and then re-pass them to child Chart
+# but no way to do that with Helm.
+global:
+  # serviceName is the name of the the service within a given application (applicationName)
+  # that this Workflow is being deployed for.
+  # In many places serviceName and applicationName will be combined to make
+  # unique names for created resources.
+  # Required.
+  serviceName:
+
+  # applicationName is the name of the application that contains the service (serviceName)
+  # that this Workflow is being deployed for.
+  # In many places serviceName and applicationName will be combined to make
+  # unique names for created resources.
+  # Required.
+  applicationName:
+
+  # pgpKeysSecretNameOverride is the optional override for Kubernetes Secret name to
+  # attach to the workflow worker containers for importing PGP keys, most notably used to
+  # decrypt SOPS encrypted configuration files.
+  #
+  # This is most useful if you don't want to supply your PGP keys via the pgpKeys parameter
+  # and have a Kubernetes Secret automatically created for you but rather reference an already
+  # existing Secret.
+  # Optional.
+  pgpKeysSecretNameOverride:
+  # pgpKeys is a dictionary of PGP keys to place into a Kubernetes Secret and then attach to the
+  # Workflow worker containers to then import for usel most notably used to decrypt SOPS
+  # encrypted configuration files.
+  # Optional.
+  pgpKeys: {}
+
+  # workflowWorkerRunnerRoleName is the name of the Kubernetes Role that has permissions
+  # to run containers with the necessary capabilities to build container images within
+  # a container running rootless with a random UID.
+  # A RoleBinding will be created and attached the ServiceAccount that is used to run
+  # the workflow Pods.
+  workflowWorkerRunnerRoleName: ploigos-workflow-runner-gitlab
