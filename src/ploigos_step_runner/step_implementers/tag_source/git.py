@@ -13,8 +13,8 @@ Configuration Key | Required? | Default  | Description
 `version`         | No        | `latest` | Semantic version to use as Git tag.
 `git-repo-root`   | Yes       | `./`     | Directory path to the Git repository to perform git operations on.
 `repo-root`       | No        |          | Alias for `git-repo-root`.
-`git-url`         | No        | Git repo root configured origin url \
-                                         | URL to Git repository to perform Git operations on. \
+`git-url`         | No        |          | Git repo root configured origin url \
+                                           URL to Git repository to perform Git operations on. \
                                            If not given will use Git remote url set in given Git repository root.
 `url`             | No        |          | Alias for `git-url`.
 `git-username`    | No        |          | Git username to use when connecting with Git remote. \
@@ -25,6 +25,10 @@ Configuration Key | Required? | Default  | Description
                                            Will override password in given git url. \
                                            Will override password in Git url in Git repository root remote url. \
                                            Will be ignored if Git repository url is using SSH.
+`archive-ref`     | No        |          | Reference path to use as the root for an addional archive tag. eg \
+                                           refs/archive/
+'archive-count'   | No        |          | Number of tags to keep before removing old tags.
+'archive-time'    | No        |          | Ammount of time in days to keep tags before removing old ones.
 
 Result Artifacts
 ----------------

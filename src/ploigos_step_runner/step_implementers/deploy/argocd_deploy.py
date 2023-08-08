@@ -114,6 +114,13 @@ Configuration Key                       | Required? | Default  | Description
 `application-name`                      | Yes       |          | Used to build ArgoCD application name.
 `service-name`                          | Yes       |          | Used to build ArgoCD application name.
 `branch`                                | Yes       |          | Used to build ArgoCD application name.
+`archive-ref`                           | Maybe     |          | Reference path to use as the root for an addional archive tag. e.g. \
+                                                                 refs/archive/
+`deploy-archive-tag`                    | No        | false    | If the archive tag should be used for the deployment instead of the \
+                                                                 regular git tag. Requires 'archive-ref' is set.
+'archive-count'                         | No        |          | Number of tags to keep before removing old tags.
+'archive-time'                          | No        |          | Ammount of time in days to keep tags before removing old ones.
+ 
 
 Results
 -------
@@ -152,7 +159,8 @@ DEFAULT_CONFIG = {
     'kube-api-skip-tls': False,
     'kube-api-uri': 'https://kubernetes.default.svc',
     'git-name': 'Ploigos Robot',
-    'argocd-add-or-update-target-cluster': True
+    'argocd-add-or-update-target-cluster': True,
+    'deploy-archive-tag': False,
 }
 
 REQUIRED_CONFIG_OR_PREVIOUS_STEP_RESULT_ARTIFACT_KEYS = [
