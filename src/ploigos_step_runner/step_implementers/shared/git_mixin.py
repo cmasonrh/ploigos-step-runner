@@ -378,14 +378,15 @@ class GitMixin:
             If error creating Git update-ref.
         """
         try:
-            sh.git(
-                "check-ref-format",
-                git_ref,
-            )
-            # if not sh.ErrorReturnCode_0:
-            #     raise Exception(
-            #         f"Reference ({git_ref}) has improper format."
-            #     )
+            try:
+                sh.git(
+                    "check-ref-format",
+                    git_ref,
+                )
+            except sh.ErrorReturnCode_1:
+                raise Exception(
+                    f"Reference ({git_ref}) has improper format."
+                )
                 
             if force:
                 sh.git(
