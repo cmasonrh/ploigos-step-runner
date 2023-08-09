@@ -34,6 +34,8 @@ Configuration Key    | Required? | Default              | Description
                                                         | Git commit message to use when/if creating an automated git commit.
 """# pylint: disable=line-too-long
 
+import sh
+
 from datetime import timezone
 from urllib.parse import urlsplit, urlunsplit
 
@@ -272,6 +274,29 @@ class GitMixin:
                 f" on current branch ({repo.active_branch.name}): {error}"
             ) from error
 
+    def git_push_ref(self, git_ref):
+        """Push Git reference.
+
+        Raises
+        ------
+        StepRunnerException
+            If error pushing reference to remote.
+        """
+        repo = self.git_repo
+        url = self.git_url
+
+        try:
+            # NOTE:
+            #   using repo.git.push rather then repo.remote().push() because need to be
+            #   able to override the git url for the push
+            repo.git.push(url, git_ref)
+        except (GitCommandError, Exception) as error:
+            raise StepRunnerException(
+                f"Error pushing ref ({git_ref}) to remote ({url})"
+                f" on current branch ({repo.active_branch.name}): {error}"
+            ) from error
+
+
     def commit_changes_and_push(self):
         """Commits all changes in the given repo and pushes them to the current remote on the
         current branch. If no changes to commit this is a no-op.
@@ -333,6 +358,48 @@ class GitMixin:
         except (GitCommandError, Exception) as error:
             raise StepRunnerException(
                 f"Error creating git tag ({git_tag_value}): {error}"
+            ) from error
+
+    def git_update_ref(self, git_ref, git_ref_value, force = False):
+        """Create a git reference.
+
+        Parameters
+        ----------
+        git_ref : str
+            Name of the reference to. Should begin with refs/
+        git_ref_value : str
+            Value to create a Git reference with with. Can be another ref or hash.
+
+        Raises
+        ------
+        StepRunnerException
+            If given git reference is not valid as determined by 'git check-ref-format'.
+            If given git reference already exists.
+            If error creating Git update-ref.
+        """
+        try:
+            sh.git.check-ref-format( # pylint: disable=no-member
+                git_ref,
+            )
+            if sh.ErrorReturnCode != 0:
+                raise Exception(
+                    f"Reference ({git_ref}) has improper format."
+                )
+                
+            if force:
+                sh.git.update-ref( # pylint: disable=no-member
+                    git_ref,
+                    git_ref_value, 
+                )
+            else:
+                sh.git.update-ref( # pylint: disable=no-member
+                    git_ref,
+                    git_ref_value, 
+                    '""',
+                )
+        except (GitCommandError, Exception) as error:
+            raise StepRunnerException(
+                f"Error creating git reference ({git_ref}) for ({git_ref_value}): {error}"
             ) from error
 
     def git_commit_utc_timestamp(self):
