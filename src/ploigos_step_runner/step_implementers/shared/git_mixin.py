@@ -378,7 +378,7 @@ class GitMixin:
             If error creating Git update-ref.
         """
         try:
-            sh.git.check-ref-format( # pylint: disable=no-member
+            sh.git.check_ref_format( # pylint: disable=no-member
                 git_ref,
             )
             if sh.ErrorReturnCode != 0:
@@ -387,12 +387,12 @@ class GitMixin:
                 )
                 
             if force:
-                sh.git.update-ref( # pylint: disable=no-member
+                sh.git.update_ref( # pylint: disable=no-member
                     git_ref,
                     git_ref_value, 
                 )
             else:
-                sh.git.update-ref( # pylint: disable=no-member
+                sh.git.update_ref( # pylint: disable=no-member
                     git_ref,
                     git_ref_value, 
                     '""',
