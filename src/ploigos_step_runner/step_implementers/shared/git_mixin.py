@@ -382,7 +382,7 @@ class GitMixin:
                 "check-ref-format",
                 git_ref,
             )
-            if sh.ErrorReturnCode != 0:
+            if not sh.ErrorReturnCode_0:
                 raise Exception(
                     f"Reference ({git_ref}) has improper format."
                 )
