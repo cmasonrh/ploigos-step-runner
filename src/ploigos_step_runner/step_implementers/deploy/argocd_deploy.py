@@ -114,12 +114,13 @@ Configuration Key                       | Required? | Default  | Description
 `application-name`                      | Yes       |          | Used to build ArgoCD application name.
 `service-name`                          | Yes       |          | Used to build ArgoCD application name.
 `branch`                                | Yes       |          | Used to build ArgoCD application name.
-`archive-ref`                           | Maybe     |          | Reference path to use as the root for an addional archive tag. e.g. \
+`archive-ref-root`                      | Maybe     |          | Reference path to use as the root for an addional archive tag. e.g. \
                                                                  refs/archive/
+`force-push-ref`                        | No        | false    | Force push git archive references.
 `deploy-archive-tag`                    | No        | false    | If the archive tag should be used for the deployment instead of the \
                                                                  regular git tag. Requires 'archive-ref' is set.
-'archive-count'                         | No        |          | Number of tags to keep before removing old tags.
-'archive-time'                          | No        |          | Ammount of time in days to keep tags before removing old ones.
+`archive-count`                         | No        |          | Number of tags to keep before removing old tags.
+`archive-time`                          | No        |          | Ammount of time in days to keep tags before removing old ones.
  
 
 Results

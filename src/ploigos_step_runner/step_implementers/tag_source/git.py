@@ -25,7 +25,7 @@ Configuration Key | Required? | Default  | Description
                                            Will override password in given git url. \
                                            Will override password in Git url in Git repository root remote url. \
                                            Will be ignored if Git repository url is using SSH.
-`archive-ref`     | No        |          | Reference path to use as the root for an addional archive tag. eg \
+`archive-ref-root`| No        |          | Reference path to use as the root for an addional archive tag. eg \
                                            refs/archive/
 `archive-count`   | No        |          | Number of tags to keep before removing old tags.
 `archive-time`    | No        |          | Ammount of time in days to keep tags before removing old ones.
@@ -126,10 +126,10 @@ class Git(StepImplementer, GitMixin):
 
         # create ref and push ref
         try:
-            archive_ref = self.get_value('archive-ref')
+            archive_ref_root = self.get_value('archive-ref-root')
             # todo: add validation of archive_ref
-            self.git_update_ref(archive_ref + tag, 'refs/tags/' + tag)
-            self.git_push_ref(archive_ref + tag)
+            self.git_update_ref(archive_ref_root + tag, 'refs/tags/' + tag)
+            self.git_push_ref(archive_ref_root + tag)
         except StepRunnerException as error:
             step_result.success = False
             step_result.message = f"Error tagging and pushing tags: {error}"
