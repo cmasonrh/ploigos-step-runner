@@ -125,14 +125,17 @@ class Git(StepImplementer, GitMixin):
             step_result.message = f"Error tagging and pushing tags: {error}"
 
         # create ref and push ref
-        try:
-            archive_ref_root = self.get_value('archive-ref-root')
-            # todo: add validation of archive_ref
-            self.git_update_ref(archive_ref_root + tag, 'refs/tags/' + tag)
-            self.git_push_ref(archive_ref_root + tag)
-        except StepRunnerException as error:
-            step_result.success = False
-            step_result.message = f"Error tagging and pushing tags: {error}"
+        archive_ref_root = self.get_value('archive-ref-root')
+        
+        if archive_ref_root:
+            try:
+
+                # todo: add validation of archive_ref
+                self.git_update_ref(archive_ref_root + tag, 'refs/tags/' + tag)
+                self.git_push_ref(archive_ref_root + tag)
+            except StepRunnerException as error:
+                step_result.success = False
+                step_result.message = f"Error tagging and pushing tags: {error}"
 
         return step_result
 
