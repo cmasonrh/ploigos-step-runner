@@ -399,7 +399,7 @@ class GitMixin:
                     "update-ref",
                     git_ref,
                     git_ref_value, 
-                    '""',
+                    '',
                 )
         except (GitCommandError, Exception) as error:
             raise StepRunnerException(
