@@ -379,7 +379,7 @@ class GitMixin:
         """
         try:
             sh.git(
-                "git-check-ref",
+                "check-ref-format",
                 git_ref,
             )
             if sh.ErrorReturnCode != 0:
