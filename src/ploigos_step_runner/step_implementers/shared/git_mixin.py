@@ -382,10 +382,10 @@ class GitMixin:
                 "check-ref-format",
                 git_ref,
             )
-            if not sh.ErrorReturnCode_0:
-                raise Exception(
-                    f"Reference ({git_ref}) has improper format."
-                )
+            # if not sh.ErrorReturnCode_0:
+            #     raise Exception(
+            #         f"Reference ({git_ref}) has improper format."
+            #     )
                 
             if force:
                 sh.git(
