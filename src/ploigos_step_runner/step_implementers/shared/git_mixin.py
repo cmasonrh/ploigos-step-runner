@@ -407,7 +407,7 @@ class GitMixin:
             else:
                 sh.git(
                     "fetch",
-                    "origin",
+                    self.git_url,
                     git_ref_root + '*' + ':' + git_ref_root + '*',
                 )
                 sh.git(

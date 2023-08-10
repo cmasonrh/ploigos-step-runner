@@ -134,7 +134,7 @@ class Git(StepImplementer, GitMixin):
                 self.git_push_ref(archive_ref_root, tag)
             except StepRunnerException as error:
                 step_result.success = False
-                step_result.message = f"Error tagging and pushing tags: {error}"
+                step_result.message = f"Error creating ref and pushing ref: {error}"
 
         return step_result
 
