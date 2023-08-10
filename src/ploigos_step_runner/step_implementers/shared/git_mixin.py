@@ -16,7 +16,7 @@ Configuration Key    | Required? | Default              | Description
 ---------------------|-----------|----------------------|-----------
 `git-repo-root`      | Yes       | `./`                 | Directory path to the Git repository to perform git operations on.
 `repo-root`          | No        |                      | Alias for `git-repo-root`.
-`git-url`            | No        | Git repo root configured origin url \
+`git-url`            | No        |                      | Git repo root configured origin url \
                                                         | URL to Git repository to perform Git operations on. \
                                                           If not given will use Git remote url set in given Git repository root.
 `url`                | No        |                      | Alias for `git-url`.
@@ -30,7 +30,7 @@ Configuration Key    | Required? | Default              | Description
                                                           Will be ignored if Git repository url is using SSH.
 `git-user-name`      | Maybe     | `Ploigos Robot`      | User name to use when creating Git commits.
 `git-user-email`     | Maybe     | `ploigos-robot`      | User email to use when creating Git commits.
-`git-commit-message` | Maybe     | `Automated commit of changes during release engineering generate-metadata step` \
+`git-commit-message` | Maybe     |                      |`Automated commit of changes during release engineering generate-metadata step` \
                                                         | Git commit message to use when/if creating an automated git commit.
 """# pylint: disable=line-too-long
 
@@ -274,8 +274,15 @@ class GitMixin:
                 f" on current branch ({repo.active_branch.name}): {error}"
             ) from error
 
-    def git_push_ref(self, git_ref):
+    def git_push_ref(self, git_ref_root, git_ref):
         """Push Git reference.
+
+        Parameters
+        ----------
+        git_ref_root : str
+            Value of the reference root. Should begin with refs/
+        git_ref : str
+            Name of the reference to create in the root.
 
         Raises
         ------
@@ -360,13 +367,15 @@ class GitMixin:
                 f"Error creating git tag ({git_tag_value}): {error}"
             ) from error
 
-    def git_update_ref(self, git_ref, git_ref_value, force = False):
+    def git_update_ref(self, git_ref_root, git_ref, git_ref_value, force = False):
         """Create a git reference.
 
         Parameters
         ----------
+        git_ref_root : str
+            Value of the reference root. Should begin with refs/
         git_ref : str
-            Name of the reference to. Should begin with refs/
+            Name of the reference to create in the root. 
         git_ref_value : str
             Value to create a Git reference with with. Can be another ref or hash.
 
@@ -377,33 +386,39 @@ class GitMixin:
             If given git reference already exists.
             If error creating Git update-ref.
         """
+        git_ref_full = git_ref_root + git_ref
         try:
             try:
                 sh.git(
                     "check-ref-format",
-                    git_ref,
+                    git_ref_full,
                 )
             except sh.ErrorReturnCode_1:
                 raise Exception(
-                    f"Reference ({git_ref}) has improper format."
+                    f"Reference ({git_ref_full}) has improper format."
                 )
                 
             if force:
                 sh.git(
                     "update-ref",
-                    git_ref,
+                    git_ref_full,
                     git_ref_value, 
                 )
             else:
                 sh.git(
+                    "fetch",
+                    "origin",
+                    git_ref_root + '*' + ':' + git_ref_root + '*',
+                )
+                sh.git(
                     "update-ref",
-                    git_ref,
+                    git_ref_full,
                     git_ref_value, 
                     '',
                 )
         except (GitCommandError, Exception) as error:
             raise StepRunnerException(
-                f"Error creating git reference ({git_ref}) for ({git_ref_value}): {error}"
+                f"Error creating git reference ({git_ref_full}) for ({git_ref_value}): {error}"
             ) from error
 
     def git_commit_utc_timestamp(self):
