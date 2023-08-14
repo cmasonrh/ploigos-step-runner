@@ -37,6 +37,7 @@ Results artifacts output by this step.
 Result Artifact Key | Description
 --------------------|------------
 `tag`               | This is the value that was used to tag the source.
+`ref`               | This is the full reference path if a reference is created
 """# pylint: disable=line-too-long
 
 from ploigos_step_runner.step_implementer import StepImplementer
@@ -132,10 +133,13 @@ class Git(StepImplementer, GitMixin):
                 # todo: add validation of archive_ref
                 self.git_update_ref(archive_ref_root, tag, 'refs/tags/' + tag)
                 self.git_push_ref(archive_ref_root, tag)
+                step_result.add_artifact(
+                    name='ref',
+                    value=archive_ref_root + tag,
+                )
             except StepRunnerException as error:
                 step_result.success = False
                 step_result.message = f"Error creating ref and pushing ref: {error}"
-
         return step_result
 
     def __get_tag_value(self):
