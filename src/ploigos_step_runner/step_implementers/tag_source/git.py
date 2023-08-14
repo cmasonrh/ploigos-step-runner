@@ -142,8 +142,6 @@ class Git(StepImplementer, GitMixin):
                     archive_ref_root,
                     tag,
                     'refs/tags/' + tag,
-                    url=None,
-                    force_push_ref=force_push_ref
                 )
                 step_result.add_artifact(
                     name='ref',
