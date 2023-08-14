@@ -225,7 +225,7 @@ def git_update_ref_and_push(
         Name of the reference to create in the root. 
     git_ref_value : str
         Value to create a Git reference with with. Can be another ref or hash.
-    url : str
+    url : str, default None
         URI of git repo, if different than origin under repo_dir.
     force_push_ref : bool, default False
         If the reference should be created even if one already exists.

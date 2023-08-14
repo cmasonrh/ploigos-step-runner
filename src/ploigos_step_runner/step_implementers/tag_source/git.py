@@ -133,6 +133,7 @@ class Git(StepImplementer, GitMixin):
         # create ref and push ref
         archive_ref_root = self.get_value('archive-ref-root')
         force_push_ref = self.get_value('force-push-ref')
+
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
@@ -141,6 +142,7 @@ class Git(StepImplementer, GitMixin):
                     archive_ref_root,
                     tag,
                     'refs/tags/' + tag,
+                    url=None,
                     force_push_ref=force_push_ref
                 )
                 step_result.add_artifact(
