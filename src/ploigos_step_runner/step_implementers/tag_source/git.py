@@ -10,25 +10,26 @@ Could come from:
 
 Configuration Key | Required? | Default  | Description
 ------------------|-----------|----------|-----------
-`version`         | No        | `latest` | Semantic version to use as Git tag.
-`git-repo-root`   | Yes       | `./`     | Directory path to the Git repository to perform git operations on.
-`repo-root`       | No        |          | Alias for `git-repo-root`.
-`git-url`         | No        |          | Git repo root configured origin url \
-                                           URL to Git repository to perform Git operations on. \
-                                           If not given will use Git remote url set in given Git repository root.
-`url`             | No        |          | Alias for `git-url`.
-`git-username`    | No        |          | Git username to use when connecting with Git remote. \
-                                           Will override username in given git url. \
-                                           Will override username in Git url in Git repository root remote url. \
-                                           Will be ignored if Git repository url is using SSH.
-`git-password`    | No        |          | Git password to use when connecting with Git remote. \
-                                           Will override password in given git url. \
-                                           Will override password in Git url in Git repository root remote url. \
-                                           Will be ignored if Git repository url is using SSH.
-`archive-ref-root`| No        |          | Reference path to use as the root for an addional archive tag. eg \
-                                           refs/archive/
-`archive-count`   | No        |          | Number of tags to keep before removing old tags.
-`archive-time`    | No        |          | Ammount of time in days to keep tags before removing old ones.
+`version`           | No        | `latest` | Semantic version to use as Git tag.
+`git-repo-root`     | Yes       | `./`     | Directory path to the Git repository to perform git operations on.
+`repo-root`         | No        |          | Alias for `git-repo-root`.
+`git-url`           | No        |          | Git repo root configured origin url \
+                                             URL to Git repository to perform Git operations on. \
+                                             If not given will use Git remote url set in given Git repository root.
+`url`               | No        |          | Alias for `git-url`.
+`git-username`      | No        |          | Git username to use when connecting with Git remote. \
+                                             Will override username in given git url. \
+                                             Will override username in Git url in Git repository root remote url. \
+                                             Will be ignored if Git repository url is using SSH.
+`git-password`      | No        |          | Git password to use when connecting with Git remote. \
+                                             Will override password in given git url. \
+                                             Will override password in Git url in Git repository root remote url. \
+                                             Will be ignored if Git repository url is using SSH.
+`archive-ref-root`  | No        |          | Reference path to use as the root for an addional archive tag. eg \
+                                             refs/archive/
+`force-push-ref`    | No        | false    | Force push git archive references.
+`archive-count`     | No        |          | Number of tags to keep before removing old tags.
+`archive-time`      | No        |          | Ammount of time in days to keep tags before removing old ones.
 
 Result Artifacts
 ----------------
@@ -49,6 +50,7 @@ from ploigos_step_runner.utils.git import git_update_ref_and_push
 DEFAULT_CONFIG = {
     'version': 'latest',
     'git-repo-root': './',
+    'force-push-ref': False,
 }
 """
 Note
@@ -130,7 +132,7 @@ class Git(StepImplementer, GitMixin):
 
         # create ref and push ref
         archive_ref_root = self.get_value('archive-ref-root')
-
+        force_push_ref = self.get_value('force-push-ref')
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
@@ -138,7 +140,8 @@ class Git(StepImplementer, GitMixin):
                     git_repo_root,
                     archive_ref_root,
                     tag,
-                    'refs/tags/' + tag
+                    'refs/tags/' + tag,
+                    force_push_ref=force_push_ref
                 )
                 step_result.add_artifact(
                     name='ref',
