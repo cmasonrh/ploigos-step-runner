@@ -274,36 +274,6 @@ class GitMixin:
                 f" on current branch ({repo.active_branch.name}): {error}"
             ) from error
 
-    def git_push_ref(self, git_ref_root, git_ref):
-        """Push Git reference.
-
-        Parameters
-        ----------
-        git_ref_root : str
-            Value of the reference root. Should begin with refs/
-        git_ref : str
-            Name of the reference to create in the root.
-
-        Raises
-        ------
-        StepRunnerException
-            If error pushing reference to remote.
-        """
-        repo = self.git_repo
-        url = self.git_url
-
-        try:
-            # NOTE:
-            #   using repo.git.push rather then repo.remote().push() because need to be
-            #   able to override the git url for the push
-            repo.git.push(url, git_ref)
-        except (GitCommandError, Exception) as error:
-            raise StepRunnerException(
-                f"Error pushing ref ({git_ref}) to remote ({url})"
-                f" on current branch ({repo.active_branch.name}): {error}"
-            ) from error
-
-
     def commit_changes_and_push(self):
         """Commits all changes in the given repo and pushes them to the current remote on the
         current branch. If no changes to commit this is a no-op.
@@ -365,62 +335,6 @@ class GitMixin:
         except (GitCommandError, Exception) as error:
             raise StepRunnerException(
                 f"Error creating git tag ({git_tag_value}): {error}"
-            ) from error
-
-    def git_update_ref(self, git_ref_root, git_ref, git_ref_value, force = False):
-        """Create a git reference.
-
-        Parameters
-        ----------
-        git_ref_root : str
-            Value of the reference root. Should begin with refs/
-        git_ref : str
-            Name of the reference to create in the root. 
-        git_ref_value : str
-            Value to create a Git reference with with. Can be another ref or hash.
-        force : bool, default False
-            If the reference should be created even if one already exists.
-
-        Raises
-        ------
-        StepRunnerException
-            If given git reference is not valid as determined by 'git check-ref-format'.
-            If given git reference already exists.
-            If error creating Git update-ref.
-        """
-        git_ref_full = git_ref_root + git_ref
-        try:
-            try:
-                sh.git(
-                    "check-ref-format",
-                    git_ref_full,
-                )
-            except sh.ErrorReturnCode_1:
-                raise Exception(
-                    f"Reference ({git_ref_full}) has improper format."
-                )
-                
-            if force:
-                sh.git(
-                    "update-ref",
-                    git_ref_full,
-                    git_ref_value, 
-                )
-            else:
-                sh.git(
-                    "fetch",
-                    self.git_url,
-                    git_ref_root + '*' + ':' + git_ref_root + '*',
-                )
-                sh.git(
-                    "update-ref",
-                    git_ref_full,
-                    git_ref_value, 
-                    '',
-                )
-        except (GitCommandError, Exception) as error:
-            raise StepRunnerException(
-                f"Error creating git reference ({git_ref_full}) for ({git_ref_value}): {error}"
             ) from error
 
     def git_commit_utc_timestamp(self):

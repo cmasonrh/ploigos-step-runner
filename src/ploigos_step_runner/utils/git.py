@@ -205,6 +205,97 @@ def git_commit_file(
             f" in git repository ({repo_dir}): {error}"
         ) from error
 
+def git_update_ref_and_push(
+    repo_dir,
+    git_ref_root,
+    git_ref,
+    git_ref_value,
+    url=None,
+    force_push_ref=False,
+):
+    """Create a git reference.
+
+    Parameters
+    ----------
+    repo_dir : str
+        Path to an existing git repository.
+    git_ref_root : str
+        Value of the reference root. Should begin with refs/
+    git_ref : str
+        Name of the reference to create in the root. 
+    git_ref_value : str
+        Value to create a Git reference with with. Can be another ref or hash.
+    url : str
+        URI of git repo, if different than origin under repo_dir.
+    force_push_ref : bool, default False
+        If the reference should be created even if one already exists.
+
+    Raises
+    ------
+    StepRunnerException
+        If given git reference is not valid as determined by 'git check-ref-format'.
+        If given git reference already exists.
+        If error creating Git update-ref.
+    """
+    git_ref_full = git_ref_root + git_ref
+    try:
+        #Check the ref format is valid
+        try:
+            sh.git(
+                "check-ref-format",
+                git_ref_full,
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+        except sh.ErrorReturnCode_1:
+            raise Exception(
+                f"Reference ({git_ref_full}) has improper format."
+            )
+        
+        #Update or create a new reference
+        if force_push_ref:
+            sh.git(
+                "update-ref",
+                git_ref_full,
+                git_ref_value, 
+                _cwd=repo_dir,
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+        else:
+            remote = url if url else 'origin'
+            sh.git(
+                "fetch",
+                remote,
+                git_ref_root + '*' + ':' + git_ref_root + '*',
+                _cwd=repo_dir,
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+            sh.git(
+                "update-ref",
+                git_ref_full,
+                git_ref_value, 
+                '',
+                _cwd=repo_dir,
+                _out=sys.stdout,
+                _err=sys.stderr
+            )
+
+        #Push the new reference
+        git_push = sh.git.push.bake(url) if url else sh.git.push.bake('origin')
+        git_push(
+            git_ref_full + ':' + git_ref_full,
+            _cwd=repo_dir,
+            _out=sys.stdout,
+            _err=sys.stderr
+        )
+
+    except (Exception) as error:
+        raise StepRunnerException(
+            f"Error creating git reference ({git_ref_full}) for ({git_ref_value}): {error}"
+        ) from error
+
 def git_tag_and_push(
     repo_dir,
     tag,

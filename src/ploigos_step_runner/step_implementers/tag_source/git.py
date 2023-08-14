@@ -44,6 +44,7 @@ from ploigos_step_runner.step_implementer import StepImplementer
 from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
 from ploigos_step_runner.step_implementers.shared import GitMixin
+from ploigos_step_runner.utils.git import git_update_ref_and_push
 
 DEFAULT_CONFIG = {
     'version': 'latest',
@@ -110,6 +111,8 @@ class Git(StepImplementer, GitMixin):
         """
         step_result = StepResult.from_step_implementer(self)
 
+        git_repo_root = self.get_value('git-repo-root')
+
         # get the tag
         tag = self.__get_tag_value()
         step_result.add_artifact(
@@ -131,8 +134,12 @@ class Git(StepImplementer, GitMixin):
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
-                self.git_update_ref(archive_ref_root, tag, 'refs/tags/' + tag)
-                self.git_push_ref(archive_ref_root, tag)
+                git_update_ref_and_push(
+                    git_repo_root,
+                    archive_ref_root,
+                    tag,
+                    'refs/tags/' + tag
+                )
                 step_result.add_artifact(
                     name='ref',
                     value=archive_ref_root + tag,
