@@ -266,7 +266,7 @@ def git_update_ref_and_push(
             remote = url if url else 'origin'
             sh.git(
                 "fetch",
-                "--refmap=" + git_ref_root,
+                "--refmap=" + git_ref_full + ':' + git_ref_full,
                 remote,
                 #git_ref_root + '*' + ':' + git_ref_root + '*',
                 _cwd=repo_dir,
