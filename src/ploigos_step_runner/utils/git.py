@@ -264,15 +264,22 @@ def git_update_ref_and_push(
             )
         else:
             remote = url if url else 'origin'
-            sh.git(
-                "fetch",
-                "--refmap=" + '+' + git_ref_full + ':' + git_ref_full,
-                remote,
-                #git_ref_root + '*' + ':' + git_ref_root + '*',
-                _cwd=repo_dir,
-                _out=sys.stdout,
-                _err=sys.stderr
-            )
+            try:
+                sh.git(
+                    "fetch",
+                    "--refmap",
+                    remote,
+                    git_ref_full + ':' + git_ref_full,
+                    _cwd=repo_dir,
+                    _out=sys.stdout,
+                    _err=sys.stderr
+                )
+            except (Exception) as error:
+                if("Couldn't find remote ref" not in error):
+                    raise Exception(
+                        f"Reference ({git_ref_full}) already exists in remote."
+                    )
+
             sh.git(
                 "update-ref",
                 git_ref_full,
