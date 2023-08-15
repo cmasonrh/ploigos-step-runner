@@ -267,7 +267,7 @@ def git_update_ref_and_push(
             try:
                 sh.git(
                     "fetch",
-                    "--refmap",
+                    "--refmap=''",
                     remote,
                     git_ref_full + ':' + git_ref_full,
                     _cwd=repo_dir,
@@ -275,7 +275,7 @@ def git_update_ref_and_push(
                     _err=sys.stderr
                 )
             except (Exception) as error:
-                if("Couldn't find remote ref" not in error):
+                if("Couldn't find remote ref" not in error.message):
                     raise Exception(
                         f"Reference ({git_ref_full}) already exists in remote."
                     )
