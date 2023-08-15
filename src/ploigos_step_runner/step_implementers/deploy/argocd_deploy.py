@@ -116,8 +116,8 @@ Configuration Key                       | Required? | Default  | Description
 `branch`                                | Yes       |          | Used to build ArgoCD application name.
 `archive-ref-root`                      | Maybe     |          | Reference path to use as the root for an addional archive tag. e.g. \
                                                                  refs/archive/
-`force-push-ref`                        | No        | false    | Force push git archive references.
-`deploy-archive-tag`                    | No        | false    | If the archive tag should be used for the deployment instead of the \
+`force-push-ref`                        | No        | False    | Force push git archive references.
+`deploy-archive-ref`                    | No        | False    | If the archive tag should be used for the deployment instead of the \
                                                                  regular git tag. Requires 'archive-ref' is set.
 `archive-count`                         | No        |          | Number of tags to keep before removing old tags.
 `archive-time`                          | No        |          | Ammount of time in days to keep tags before removing old ones.
@@ -132,6 +132,7 @@ Result Key                         | Description
 `argocd-app-name`                  | The argocd app name that was created or updated
 `deployed-host-urls`               | The host URLs deployed by ArgoCD (Ingress/Route resources)
 `config-repo-git-tag`              | The git tag applied to the configuration repo for deployment
+`config-repo-git-ref`              | The git reference applied to the configuration repo for deployment
 `argocd-deployed-manifest`         | The generated yml file used for deployment.
 `container-image-deployed-address` | Container image address that was deployed.
 """# pylint: disable=line-too-long
@@ -142,7 +143,7 @@ from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
 from ploigos_step_runner.step_implementers.shared import (ArgoCDGeneric,
                                                           ContainerDeployMixin)
-from ploigos_step_runner.utils.git import clone_repo, git_config, git_checkout, git_commit_file
+from ploigos_step_runner.utils.git import clone_repo, git_config, git_checkout, git_commit_file, git_update_ref_and_push, get_git_auth_url
 
 DEFAULT_CONFIG = {
     'argocd-sync-timeout-seconds': 60,
@@ -161,7 +162,8 @@ DEFAULT_CONFIG = {
     'kube-api-uri': 'https://kubernetes.default.svc',
     'git-name': 'Ploigos Robot',
     'argocd-add-or-update-target-cluster': True,
-    'deploy-archive-tag': False,
+    'force-push-ref': False,
+    'deploy-archive-ref': False,
 }
 
 REQUIRED_CONFIG_OR_PREVIOUS_STEP_RESULT_ARTIFACT_KEYS = [
@@ -289,6 +291,10 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
             self.get_value('deployment-config-helm-chart-additional-values-files')
         force_push_tags = self.get_value('force-push-tags')
         additional_helm_values_files = self.get_value('additional-helm-values-files')
+        username = self.get_value('git-username')
+        password = self.get_value('git-password')
+        force_push_ref = self.get_value('force-push-ref')
+        deploy_archive_ref = self.get_value('deploy-archive-ref')
 
         try:
             argocd_app_name = self._get_app_name()
@@ -359,6 +365,34 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
                 value=deployment_config_repo_tag
             )
 
+            # create ref and push ref
+            archive_ref_root = self.get_value('archive-ref-root')
+
+            if archive_ref_root:
+                print("Create ref and push")
+                try:
+                    # todo: add validation of archive_ref
+                    git_auth_url = get_git_auth_url(
+                        deployment_config_repo,
+                        username,
+                        password
+                    )
+                    git_update_ref_and_push(
+                        deployment_config_repo_dir,
+                        archive_ref_root,
+                        deployment_config_repo_tag,
+                        'refs/tags/' + deployment_config_repo_tag,
+                        git_auth_url,
+                        force_push_ref
+                    )
+                    step_result.add_artifact(
+                        name='config-repo-git-ref',
+                        value=archive_ref_root + deployment_config_repo_tag,
+                    )
+                except StepRunnerException as error:
+                    step_result.success = False
+                    step_result.message = f"Error creating ref and pushing ref: {error}"
+
             # create/update argocd app and sync it
             print("Sign into ArgoCD")
             self._argocd_sign_in(
@@ -390,18 +424,33 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
             argocd_values_files += deployment_config_helm_chart_additional_value_files
             argocd_values_files += [deployment_config_helm_chart_environment_values_file]
             argocd_values_files += additional_helm_values_files
-            self._argocd_app_create_or_update(
-                argocd_app_name=argocd_app_name,
-                repo=deployment_config_repo,
-                revision=deployment_config_repo_tag,
-                path=deployment_config_helm_chart_path,
-                dest_server=deployment_config_destination_cluster_uri,
-                dest_namespace=deployment_namespace,
-                auto_sync=self.get_value('argocd-auto-sync'),
-                fail_on_shared_resource=self.get_value('argocd-fail-on-shared-resource'),
-                values_files=argocd_values_files,
-                project=self.get_value('argocd-project')
-            )
+
+            if deploy_archive_ref:
+                self._argocd_app_create_or_update(
+                    argocd_app_name=argocd_app_name,
+                    repo=deployment_config_repo,
+                    revision=archive_ref_root + deployment_config_repo_tag,
+                    path=deployment_config_helm_chart_path,
+                    dest_server=deployment_config_destination_cluster_uri,
+                    dest_namespace=deployment_namespace,
+                    auto_sync=self.get_value('argocd-auto-sync'),
+                    fail_on_shared_resource=self.get_value('argocd-fail-on-shared-resource'),
+                    values_files=argocd_values_files,
+                    project=self.get_value('argocd-project')
+                )
+            else:
+                self._argocd_app_create_or_update(
+                    argocd_app_name=argocd_app_name,
+                    repo=deployment_config_repo,
+                    revision=deployment_config_repo_tag,
+                    path=deployment_config_helm_chart_path,
+                    dest_server=deployment_config_destination_cluster_uri,
+                    dest_namespace=deployment_namespace,
+                    auto_sync=self.get_value('argocd-auto-sync'),
+                    fail_on_shared_resource=self.get_value('argocd-fail-on-shared-resource'),
+                    values_files=argocd_values_files,
+                    project=self.get_value('argocd-project')
+                )
 
             # sync and wait for the sync of the ArgoCD app
             print(f"Sync (and wait for) ArgoCD Application ({argocd_app_name})")

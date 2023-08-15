@@ -12,6 +12,42 @@ from ploigos_step_runner.exceptions import StepRunnerException
 
 GIT_REPO_REGEX = re.compile(r"(?P<protocol>^https:\/\/|^http:\/\/)?(?P<address>.*$)")
 
+def get_git_auth_url( #pylint: dsable=too-many-arguments
+    repo_url,
+    username=None,
+    password=None       
+):
+    """Generate the git url with supplied authentication.
+
+    Parameters
+    ----------
+    repo_url : str
+        URI of the repository.
+    username : str
+        Username for the remote git repo (if required)
+    password : str
+        Password for the remote git repo (if required)
+    """
+
+    repo_match = get_git_repo_regex().match(repo_url)
+    repo_protocol = repo_match.groupdict()['protocol']
+    repo_address = repo_match.groupdict()['address']
+
+    # if deployment config repo uses http/https push using user/pass
+    # else push using ssh
+    if username and password and repo_protocol and re.match(
+            r'^http://|^https://',
+            repo_protocol
+    ):
+        repo_url_with_auth = \
+            f"{repo_protocol}{username}:{password}" \
+            f"@{repo_address}"
+    else:
+        repo_url_with_auth = repo_url
+
+    return repo_url_with_auth
+
+
 def clone_repo(  # pylint: disable=too-many-arguments
     repo_dir,
     repo_url,
