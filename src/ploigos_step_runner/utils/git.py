@@ -275,7 +275,7 @@ def git_update_ref_and_push(
                     _err=sys.stderr
                 )
             except (Exception) as error:
-                if("Couldn't find remote ref" not in error.message):
+                if error.message.find("Couldn't find remote ref") != -1:
                     raise Exception(
                         f"Reference ({git_ref_full}) already exists in remote."
                     )
