@@ -10,6 +10,8 @@ import re
 import sh
 import sys
 
+from collections import OrderedDict
+from datetime import datetime
 from io import StringIO
 from ploigos_step_runner.utils.io import \
     create_sh_redirect_to_multiple_streams_fn_callback
@@ -488,7 +490,12 @@ def git_orderd_tag_refs_with_created(
             _out=foreach_out_callback,
             _err=sys.stderr
         )
-        print(f"Output \n {foreach_out_buff.getvalue()}")
+        tag_dict = OrderedDict()
+        for line in foreach_out_buff.getvalue().splitlines():
+            split_line = re.split(':', line)
+            tag_dict[split_line[0]] = datetime.strptime(split_line[1],'%a %b %d %H:%M:%S %Y %z')
+        for key, value in tag_dict.items():
+            print(f'Ref:{key} Date:{value.strftime("%Y-%M-%D %H:%M:%S")}\n')
 
     except (Exception) as error:
         raise StepRunnerException(
