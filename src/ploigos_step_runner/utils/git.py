@@ -484,7 +484,7 @@ def git_orderd_tag_refs_with_created(
         output = sh.git(
             'for-each-ref',
             '--sort=creatordate',
-            '--format="%(creatordate)|%(refname)"'
+            '--format="%(creatordate)|%(refname)"',
             'refs/tags/',
             _cwd=repo_dir,
             _out=foreach_out_callback,
