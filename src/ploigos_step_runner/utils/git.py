@@ -27,6 +27,11 @@ def get_git_auth_url( #pylint: dsable=too-many-arguments
         Username for the remote git repo (if required)
     password : str
         Password for the remote git repo (if required)
+
+    Returns
+    -------
+    str
+        Authitcation url for git repository.
     """
 
     repo_match = get_git_repo_regex().match(repo_url)
@@ -430,3 +435,42 @@ def get_git_repo_regex():
         The regex representing a valid git repo URI.
     """
     return GIT_REPO_REGEX
+
+def git_orderd_tag_refs_with_created(
+    repo_dir,
+    url=None,
+):
+    """Create a git reference.
+
+    Parameters
+    ----------
+    repo_dir : str
+        Path to an existing git repository.
+    url : str, default None
+        URI of git repo, if different than origin under repo_dir.
+
+    Returns
+    -------
+    dict :
+        Orderd list of tag references and create dates
+
+    Raises
+    ------
+    StepRunnerException
+        If repo at url is not found.
+    """
+    try:
+        output = sh.git(
+            'for-each-ref',
+            '--sort=creatordate',
+            '--format="%(creatordate): %(refname)"'
+            'refs/tags/',
+            _out=sys.stdout,
+            _err=sys.stderr
+        )
+        print(f"Output \n {output}")
+
+    except (Exception) as error:
+        raise StepRunnerException(
+            f"Error accessing repo: {error}"
+        ) from error

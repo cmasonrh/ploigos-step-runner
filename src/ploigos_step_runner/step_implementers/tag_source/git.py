@@ -45,7 +45,7 @@ from ploigos_step_runner.step_implementer import StepImplementer
 from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
 from ploigos_step_runner.step_implementers.shared import GitMixin
-from ploigos_step_runner.utils.git import git_update_ref_and_push
+from ploigos_step_runner.utils.git import git_update_ref_and_push, git_orderd_tag_refs_with_created
 
 DEFAULT_CONFIG = {
     'version': 'latest',
@@ -137,6 +137,10 @@ class Git(StepImplementer, GitMixin):
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
+                git_orderd_tag_refs_with_created(
+                    git_repo_root,
+                    self.git_url,
+                )
                 git_update_ref_and_push(
                     git_repo_root,
                     archive_ref_root,
