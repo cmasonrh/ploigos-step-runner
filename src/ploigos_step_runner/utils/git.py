@@ -460,11 +460,21 @@ def git_orderd_tag_refs_with_created(
         If repo at url is not found.
     """
     try:
+        remote = url if url else 'origin'
+        sh.git(
+            'fetch',
+            '--tags',
+            remote,
+            _cwd=repo_dir,
+            _out=sys.stdout,
+            _err=sys.stderr
+        )
         output = sh.git(
             'for-each-ref',
             '--sort=creatordate',
             '--format="%(creatordate): %(refname)"'
             'refs/tags/',
+            _cwd=repo_dir,
             _out=sys.stdout,
             _err=sys.stderr
         )
