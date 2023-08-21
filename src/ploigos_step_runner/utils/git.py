@@ -5,9 +5,14 @@ NOTE: There is heavy overlap between this class and `GitMixin`. An architectural
       step implementers that require the same configuration parameters / behaviors.
 """
 
+
 import re
-import sys
 import sh
+import sys
+
+from io import StringIO
+from ploigos_step_runner.utils.io import \
+    create_sh_redirect_to_multiple_streams_fn_callback
 from ploigos_step_runner.exceptions import StepRunnerException
 
 GIT_REPO_REGEX = re.compile(r"(?P<protocol>^https:\/\/|^http:\/\/)?(?P<address>.*$)")
@@ -469,16 +474,21 @@ def git_orderd_tag_refs_with_created(
             _out=sys.stdout,
             _err=sys.stderr
         )
+        foreach_out_buff = StringIO()
+        foreach_out_callback = create_sh_redirect_to_multiple_streams_fn_callback([
+            sys.stdout,
+            foreach_out_buff
+        ])
         output = sh.git(
             'for-each-ref',
             '--sort=creatordate',
             '--format="%(creatordate): %(refname)"'
             'refs/tags/',
             _cwd=repo_dir,
-            _out=sys.stdout,
+            _out=foreach_out_callback,
             _err=sys.stderr
         )
-        print(f"Output \n {output}")
+        print(f"Output \n {foreach_out_buff.getvalue()}")
 
     except (Exception) as error:
         raise StepRunnerException(
