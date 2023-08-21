@@ -492,7 +492,7 @@ def git_orderd_tag_refs_with_created(
         )
         tag_dict = OrderedDict()
         for line in foreach_out_buff.getvalue().splitlines():
-            split_line = re.split('|', line)
+            split_line = line.split('|')
             tag_dict[split_line[0]] = datetime.strptime(split_line[1],'%a %b %d %H:%M:%S %Y %z')
         for key, value in tag_dict.items():
             print(f'Ref:{key} Date:{value.strftime("%Y-%m-%d %H:%M:%S")}\n')
