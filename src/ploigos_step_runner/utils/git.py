@@ -611,7 +611,7 @@ def archive_tags(
 
                 except (Exception) as error:
                     raise StepRunnerException(
-                        f"Error creating git reference ({git_ref_full}) for ({tag}): {error}"
+                        f"Error creating git reference ({git_ref_root + tag}) for ({tag}): {error}"
                     ) from error
     else:
         print(f"No archiving performed existing tag count: {len(ordered_tags)} does not exceed count to keep: {count_to_keep}")

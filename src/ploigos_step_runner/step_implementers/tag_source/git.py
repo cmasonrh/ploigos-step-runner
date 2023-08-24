@@ -137,12 +137,12 @@ class Git(StepImplementer, GitMixin):
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
-                ordered_tags = git_orderd_tag_refs_with_created(
-                    git_repo_root,
-                    self.git_url,
-                )
-
                 if archive_count:
+                    ordered_tags = git_orderd_tag_refs_with_created(
+                        git_repo_root,
+                        self.git_url,
+                    )
+
                     archive_tags(
                         git_repo_root,
                         archive_ref_root,
