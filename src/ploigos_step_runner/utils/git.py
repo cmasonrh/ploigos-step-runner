@@ -497,7 +497,7 @@ def git_orderd_tag_refs_with_created(
             split_line = line.rstrip().split('|')
             tag_dict[split_line[1]] = datetime.strptime(split_line[0],'%a %b %d %H:%M:%S %Y %z')
 
-        return tag_dict.items()
+        return tag_dict
             
     #todo: better exception handling
     except (Exception) as error:
