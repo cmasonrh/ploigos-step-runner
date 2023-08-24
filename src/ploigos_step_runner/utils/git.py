@@ -497,7 +497,7 @@ def git_orderd_tag_refs_with_created(
             split_line = line.rstrip().split('|')
             tag_dict[split_line[1]] = datetime.strptime(split_line[0],'%a %b %d %H:%M:%S %Y %z')
 
-        return tag_dict
+        return tag_dict.items()
             
     #todo: better exception handling
     except (Exception) as error:
@@ -541,11 +541,12 @@ def archive_tags(
     """
     if len(ordered_tags) > count_to_keep:
         left_to_archive = len(ordered_tags) - count_to_keep
-        for tag_ref in ordered_tags.items():
+        for tag_ref_dict in ordered_tags.items():
             if left_to_archive <= 0:
                 return
             else:
                 try:
+                    tag_ref = tag_ref_dict[0]
                     t_regexp = re.compile(r'refs/tags/(.+)')
                     t_match = t_regexp.match(tag_ref)
                     tag = t_match.group(1)
