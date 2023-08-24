@@ -312,10 +312,11 @@ def git_update_ref_and_push(
             )
         else:
             remote = url if url else 'origin'
+            archive_ref_exists = True
             try:
                 sh.git(
                     "fetch",
-                    "--refmap=''",
+                    '--refmap=""',
                     remote,
                     git_ref_full + ':' + git_ref_full,
                     _cwd=repo_dir,
@@ -323,22 +324,25 @@ def git_update_ref_and_push(
                     _err=sys.stderr
                 )
             except (Exception) as error:
-                if repr(error).find("Couldn't find remote ref") != -1:
-                    raise Exception(
-                        f"Reference ({git_ref_full}) already exists in remote."
-                    )
+                if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
+                    archive_ref_exists = False
                 else:
                     raise error
-
-            sh.git(
-                "update-ref",
-                git_ref_full,
-                git_ref_value, 
-                '',
-                _cwd=repo_dir,
-                _out=sys.stdout,
-                _err=sys.stderr
-            )
+                
+            if not archive_ref_exists:
+                sh.git(
+                    "update-ref",
+                    git_ref_full,
+                    git_ref_value, 
+                    '',
+                    _cwd=repo_dir,
+                    _out=sys.stdout,
+                    _err=sys.stderr
+                )
+            else:
+                raise StepRunnerException(
+                    f"Archive reference: {git_ref_full} already exists. Can not override with force archive {force_push_ref}."
+                )
 
         #Push the new reference
         git_push = sh.git.push.bake(url) if url else sh.git.push.bake('origin')
@@ -560,10 +564,10 @@ def archive_tags(
                         _err=sys.stderr
                     )
                     try:
-                        ref_exists = False
+                        ref_exists = True
                         sh.git(
                             "fetch",
-                            "--refmap=''",
+                            '--refmap=""',
                             remote,
                             git_ref_full + ':' + git_ref_full,
                             _cwd=repo_dir,
@@ -572,12 +576,12 @@ def archive_tags(
                         )
 
                     except (Exception) as error:
-                        if repr(error).find("Couldn't find remote ref") != -1:
-                            ref_exists = True
+                        if not re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
+                            ref_exists = False
                         else:
                             raise error
 
-                    if ref_exists == False:
+                    if not ref_exists:
                         sh.git(
                             "update-ref",
                             git_ref_full,
