@@ -549,6 +549,7 @@ def archive_tags(
             if left_to_archive <= 0:
                 return
             else:
+                left_to_archive-=1
                 try:
                     t_regexp = re.compile(r'refs/tags/(.+)')
                     t_match = t_regexp.match(tag_ref)
@@ -580,7 +581,7 @@ def archive_tags(
                             ref_exists = False
                         else:
                             raise error
-
+                        
                     if not ref_exists:
                         sh.git(
                             "update-ref",
