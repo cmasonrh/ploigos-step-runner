@@ -565,7 +565,6 @@ def archive_tags(
                         _err=sys.stderr
                     )
                     try:
-                        ref_exists = True
                         sh.git(
                             "fetch",
                             '--refmap=""',
@@ -575,9 +574,10 @@ def archive_tags(
                             _out=sys.stdout,
                             _err=sys.stderr
                         )
+                        ref_exists = True
 
                     except (Exception) as error:
-                        if not re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
+                        if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
                             ref_exists = False
                         else:
                             raise error
