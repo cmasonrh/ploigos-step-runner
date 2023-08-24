@@ -28,8 +28,7 @@ Configuration Key | Required? | Default  | Description
 `archive-ref-root`  | No        |          | Reference path to use as the root for an addional archive tag. eg \
                                              refs/archive/
 `force-push-ref`    | No        | false    | Force push git archive references.
-`archive-count`     | No        |          | Number of tags to keep before removing old tags.
-`archive-time`      | No        |          | Ammount of time in days to keep tags before removing old ones.
+`archive-count`     | No        |          | Number of tags to keep before archiving old tags.
 
 Result Artifacts
 ----------------
@@ -45,7 +44,7 @@ from ploigos_step_runner.step_implementer import StepImplementer
 from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
 from ploigos_step_runner.step_implementers.shared import GitMixin
-from ploigos_step_runner.utils.git import git_update_ref_and_push, git_orderd_tag_refs_with_created
+from ploigos_step_runner.utils.git import git_update_ref_and_push, git_orderd_tag_refs_with_created, archive_tags
 
 DEFAULT_CONFIG = {
     'version': 'latest',
@@ -133,14 +132,25 @@ class Git(StepImplementer, GitMixin):
         # create ref and push ref
         archive_ref_root = self.get_value('archive-ref-root')
         force_push_ref = self.get_value('force-push-ref')
+        archive_count = self.get_value('archive-count')
 
         if archive_ref_root:
             try:
                 # todo: add validation of archive_ref
-                git_orderd_tag_refs_with_created(
+                ordered_tags = git_orderd_tag_refs_with_created(
                     git_repo_root,
                     self.git_url,
                 )
+
+                if archive_count:
+                    archive_tags(
+                        git_repo_root,
+                        archive_ref_root,
+                        ordered_tags,
+                        archive_count,
+                        self.git_url
+                    )
+
                 git_update_ref_and_push(
                     git_repo_root,
                     archive_ref_root,

@@ -327,6 +327,8 @@ def git_update_ref_and_push(
                     raise Exception(
                         f"Reference ({git_ref_full}) already exists in remote."
                     )
+                else:
+                    raise error
 
             sh.git(
                 "update-ref",
@@ -458,7 +460,7 @@ def git_orderd_tag_refs_with_created(
 
     Returns
     -------
-    dict :
+    dict : {str : datetime}
         Orderd list of tag references and create dates
 
     Raises
@@ -492,12 +494,124 @@ def git_orderd_tag_refs_with_created(
         )
         tag_dict = OrderedDict()
         for line in foreach_out_buff.getvalue().splitlines():
-            split_line = line.split('|')
+            split_line = line.rstrip().split('|')
             tag_dict[split_line[1]] = datetime.strptime(split_line[0],'%a %b %d %H:%M:%S %Y %z')
-        for key, value in tag_dict.items():
-            print(f'Ref:{key} Date:{value.strftime("%Y-%m-%d %H:%M:%S")}\n')
 
+        return tag_dict
+            
+    #todo: better exception handling
     except (Exception) as error:
         raise StepRunnerException(
             f"Error accessing repo: {error}"
         ) from error
+    
+def archive_tags(
+    repo_dir,
+    git_ref_root,
+    ordered_tags,
+    count_to_keep,
+    url=None,
+):
+    """Processes the list of tags from the supplied repository. Keeping only the newest up to the supplied
+    count. All others are archived if they don't currently already have an archive ref and then the tags
+    are deleted.
+
+    Parameters
+    ----------
+    repo_dir : str
+        Path to an existing git repository.
+    git_ref_root : str
+        Value of the reference root. Should begin with refs/
+    ordered_tags: dict {str : datetime}
+        Ordered list of all tags with their ref and creator date.
+    count_to_keep: int
+        Number of existing tags to preserve.
+    url : str, default None
+        URI of git repo, if different than origin under repo_dir.
+
+    Returns
+    -------
+    dict : {str : datetime}
+        Orderd list of tag references and create dates
+
+    Raises
+    ------
+    StepRunnerException
+        If repo at url is not found.
+    """
+    if len(ordered_tags) > count_to_keep:
+        left_to_archive = len(ordered_tags) - count_to_keep
+        for tag_ref in ordered_tags.items():
+            if left_to_archive <= 0:
+                return
+            else:
+                try:
+                    t_regexp = re.compile(r'refs/tags/(.+)')
+                    t_match = t_regexp.match(tag_ref)
+                    tag = t_match.group(1)
+
+                    remote = url if url else 'origin'
+                    git_ref_full = git_ref_root + tag
+
+                    sh.git(
+                        "check-ref-format",
+                        git_ref_full,
+                        _out=sys.stdout,
+                        _err=sys.stderr
+                    )
+                    try:
+                        ref_exists = False
+                        sh.git(
+                            "fetch",
+                            "--refmap=''",
+                            remote,
+                            git_ref_full + ':' + git_ref_full,
+                            _cwd=repo_dir,
+                            _out=sys.stdout,
+                            _err=sys.stderr
+                        )
+
+                    except (Exception) as error:
+                        if repr(error).find("Couldn't find remote ref") != -1:
+                            ref_exists = True
+                        else:
+                            raise error
+
+                    if ref_exists == False:
+                        sh.git(
+                            "update-ref",
+                            git_ref_full,
+                            tag_ref, 
+                            '',
+                            _cwd=repo_dir,
+                            _out=sys.stdout,
+                            _err=sys.stderr
+                        )
+
+                        #Push the new reference
+                        sh.git(
+                            'push',
+                            url,
+                            git_ref_full + ':' + git_ref_full,
+                            _cwd=repo_dir,
+                            _out=sys.stdout,
+                            _err=sys.stderr
+                        )
+
+                    #Push the tag delete
+                    sh.git(
+                        'push',
+                        '--delete',
+                        url,
+                        git_ref_full + ':' + git_ref_full,
+                        _cwd=repo_dir,
+                        _out=sys.stdout,
+                        _err=sys.stderr
+                    )
+
+                except (Exception) as error:
+                    raise StepRunnerException(
+                        f"Error creating git reference ({git_ref_full}) for ({tag}): {error}"
+                    ) from error
+    else:
+        print(f"No archiving performed existing tag count: {len(ordered_tags)} does not exceed count to keep: {count_to_keep}")
