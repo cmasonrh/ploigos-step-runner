@@ -483,7 +483,7 @@ def git_orderd_tag_refs_with_created(
             sys.stdout,
             foreach_out_buff
         ])
-        output = sh.git(
+        sh.git(
             'for-each-ref',
             '--sort=creatordate',
             '--format=%(creatordate)|%(refname)',
@@ -541,12 +541,11 @@ def archive_tags(
     """
     if len(ordered_tags) > count_to_keep:
         left_to_archive = len(ordered_tags) - count_to_keep
-        for tag_ref_dict in ordered_tags.items():
+        for tag_ref, tag_ref_date in ordered_tags.items():
             if left_to_archive <= 0:
                 return
             else:
                 try:
-                    tag_ref = tag_ref_dict[0]
                     t_regexp = re.compile(r'refs/tags/(.+)')
                     t_match = t_regexp.match(tag_ref)
                     tag = t_match.group(1)
