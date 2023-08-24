@@ -605,9 +605,8 @@ def archive_tags(
                     #Push the tag delete
                     sh.git(
                         'push',
-                        '--delete',
                         url,
-                        git_ref_full + ':' + git_ref_full,
+                        ':' + tag_ref,
                         _cwd=repo_dir,
                         _out=sys.stdout,
                         _err=sys.stderr
