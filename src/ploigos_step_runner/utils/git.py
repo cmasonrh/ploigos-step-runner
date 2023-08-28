@@ -313,6 +313,11 @@ def git_update_ref_and_push(
         else:
             remote = url if url else 'origin'
             try:
+                error_buffer = StringIO()
+                foreach_out_callback = create_sh_redirect_to_multiple_streams_fn_callback([
+                    sys.stdout,
+                    error_buffer
+                ])
                 sh.git(
                     "fetch",
                     '--refmap=""',
@@ -320,11 +325,11 @@ def git_update_ref_and_push(
                     git_ref_full + ':' + git_ref_full,
                     _cwd=repo_dir,
                     _out=sys.stdout,
-                    _err=sys.stderr
+                    _err=foreach_out_callback
                 )
                 archive_ref_exists = True
             except (Exception) as error:
-                if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
+                if re.search(r"couldn't find remote ref", error_buffer, re.IGNORECASE):
                     archive_ref_exists = False
                 else:
                     raise error
@@ -564,6 +569,11 @@ def archive_tags(
                         _err=sys.stderr
                     )
                     try:
+                        error_buffer = StringIO()
+                        foreach_out_callback = create_sh_redirect_to_multiple_streams_fn_callback([
+                            sys.stdout,
+                            error_buffer
+                        ])
                         sh.git(
                             "fetch",
                             '--refmap=""',
@@ -571,12 +581,12 @@ def archive_tags(
                             git_ref_full + ':' + git_ref_full,
                             _cwd=repo_dir,
                             _out=sys.stdout,
-                            _err=sys.stderr
+                            _err=foreach_out_callback
                         )
                         ref_exists = True
 
                     except (Exception) as error:
-                        if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
+                        if re.search(r"couldn't find remote ref", error_buffer.getvalue(), re.IGNORECASE):
                             ref_exists = False
                             print("Exception caught and matched.")
                         else:
