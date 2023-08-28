@@ -578,7 +578,9 @@ def archive_tags(
                     except (Exception) as error:
                         if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
                             ref_exists = False
+                            print("Exception caught and matched.")
                         else:
+                            print("Exception caught didn't match")
                             raise error
                         
                     if not ref_exists:
