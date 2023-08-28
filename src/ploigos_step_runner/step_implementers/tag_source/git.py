@@ -40,6 +40,8 @@ Result Artifact Key | Description
 `ref`               | This is the full reference path if a reference is created
 """# pylint: disable=line-too-long
 
+import re
+
 from ploigos_step_runner.step_implementer import StepImplementer
 from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
@@ -136,8 +138,11 @@ class Git(StepImplementer, GitMixin):
 
         if archive_ref_root:
             try:
-                # todo: add validation of archive_ref
+                if not re.search(r'^refs/', archive_ref_root):
+                    raise StepRunnerException("Archive ref root must begin with refs/")
+
                 if archive_count:
+                    print("Archive old tags")
                     ordered_tags = git_orderd_tag_refs_with_created(
                         git_repo_root,
                         self.git_url,
@@ -151,6 +156,7 @@ class Git(StepImplementer, GitMixin):
                         self.git_url
                     )
 
+                print("Create ref and push")
                 git_update_ref_and_push(
                     git_repo_root,
                     archive_ref_root,

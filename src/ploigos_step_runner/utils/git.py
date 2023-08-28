@@ -503,10 +503,9 @@ def git_orderd_tag_refs_with_created(
 
         return tag_dict
             
-    #todo: better exception handling
     except (Exception) as error:
         raise StepRunnerException(
-            f"Error accessing repo: {error}"
+            f"Error ordering tags: {error}"
         ) from error
     
 def archive_tags(

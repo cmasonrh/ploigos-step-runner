@@ -367,9 +367,10 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
 
             # create ref and push ref           
             if archive_ref_root:
-                print("Create ref and push")
+                if not re.search(r'^refs/', archive_ref_root):
+                    raise StepRunnerException("Archive ref root must begin with refs/")
+                
                 try:
-                    # todo: add validation of archive_ref
                     git_auth_url = get_git_auth_url(
                         deployment_config_repo,
                         username,
@@ -377,6 +378,7 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
                     )
 
                     if archive_count:
+                        print("Archive old tags")
                         ordered_tags = git_orderd_tag_refs_with_created(
                             deployment_config_repo_dir,
                             git_auth_url,
@@ -390,6 +392,7 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
                             git_auth_url
                         )
 
+                    print("Create ref and push")
                     git_update_ref_and_push(
                         deployment_config_repo_dir,
                         archive_ref_root,
