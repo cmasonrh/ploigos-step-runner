@@ -312,7 +312,6 @@ def git_update_ref_and_push(
             )
         else:
             remote = url if url else 'origin'
-            archive_ref_exists = True
             try:
                 sh.git(
                     "fetch",
@@ -323,6 +322,7 @@ def git_update_ref_and_push(
                     _out=sys.stdout,
                     _err=sys.stderr
                 )
+                archive_ref_exists = True
             except (Exception) as error:
                 if re.search(r"couldn't find remote ref", repr(error), re.IGNORECASE):
                     archive_ref_exists = False

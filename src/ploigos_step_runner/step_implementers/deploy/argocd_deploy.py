@@ -119,8 +119,7 @@ Configuration Key                       | Required? | Default  | Description
 `force-push-ref`                        | No        | False    | Force push git archive references.
 `deploy-archive-ref`                    | No        | False    | If the archive tag should be used for the deployment instead of the \
                                                                  regular git tag. Requires 'archive-ref' is set.
-`archive-count`                         | No        |          | Number of tags to keep before removing old tags.
-`archive-time`                          | No        |          | Ammount of time in days to keep tags before removing old ones.
+`archive-count`                         | No        |          | Number of tags to keep before archiving old tags.
  
 
 Results
@@ -143,7 +142,7 @@ from ploigos_step_runner.results import StepResult
 from ploigos_step_runner.exceptions import StepRunnerException
 from ploigos_step_runner.step_implementers.shared import (ArgoCDGeneric,
                                                           ContainerDeployMixin)
-from ploigos_step_runner.utils.git import clone_repo, git_config, git_checkout, git_commit_file, git_update_ref_and_push, get_git_auth_url
+from ploigos_step_runner.utils.git import clone_repo, git_config, git_checkout, git_commit_file, git_update_ref_and_push, get_git_auth_url, archive_tags, git_orderd_tag_refs_with_created
 
 DEFAULT_CONFIG = {
     'argocd-sync-timeout-seconds': 60,
@@ -295,7 +294,8 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
         password = self.get_value('git-password')
         force_push_ref = self.get_value('force-push-ref')
         deploy_archive_ref = self.get_value('deploy-archive-ref')
-
+        archive_ref_root = self.get_value('archive-ref-root')
+        archive_count = self.get_value('archive-count')
         try:
             argocd_app_name = self._get_app_name()
             step_result.add_artifact(
@@ -365,9 +365,7 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
                 value=deployment_config_repo_tag
             )
 
-            # create ref and push ref
-            archive_ref_root = self.get_value('archive-ref-root')
-
+            # create ref and push ref           
             if archive_ref_root:
                 print("Create ref and push")
                 try:
@@ -377,6 +375,21 @@ class ArgoCDDeploy(ContainerDeployMixin, ArgoCDGeneric):
                         username,
                         password
                     )
+
+                    if archive_count:
+                        ordered_tags = git_orderd_tag_refs_with_created(
+                            deployment_config_repo_dir,
+                            git_auth_url,
+                        )
+
+                        archive_tags(
+                            deployment_config_repo_dir,
+                            archive_ref_root,
+                            ordered_tags,
+                            archive_count,
+                            git_auth_url
+                        )
+
                     git_update_ref_and_push(
                         deployment_config_repo_dir,
                         archive_ref_root,
