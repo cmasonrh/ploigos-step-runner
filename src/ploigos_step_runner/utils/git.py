@@ -350,7 +350,7 @@ def git_update_ref_and_push(
                 )
 
         #Push the new reference
-        git_push = sh.git.push.bake(url) if url else sh.git.push.bake('origin')
+        git_push = sh.git.push.bake(url) if url else sh.git.push
         git_push(
             git_ref_full + ':' + git_ref_full,
             _cwd=repo_dir,
@@ -588,9 +588,7 @@ def archive_tags(
                     except (Exception) as error:
                         if re.search(r"couldn't find remote ref", error_buffer.getvalue(), re.IGNORECASE):
                             ref_exists = False
-                            print("Exception caught and matched.")
                         else:
-                            print("Exception caught didn't match")
                             raise error
                         
                     if not ref_exists:

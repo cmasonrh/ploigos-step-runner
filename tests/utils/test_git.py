@@ -627,3 +627,212 @@ class TestGitUtils_git_tag_and_push(BaseTestCase):
             _out=ANY,
             _err=ANY
         )
+
+class TestGitUtils_git_ref_and_push(BaseTestCase):
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_success_ssh(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'refs/archive/'
+        git_ref = 'v0.42.0'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = None
+
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+        )
+
+        git_mock.assert_has_calls([
+            call(
+                'check-ref-format',
+                git_ref_root + git_ref,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            ),
+            call(
+                'fetch',
+                '--refmap=""',
+                'origin',
+                git_ref_root + git_ref + ':' + git_ref_root + git_ref,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            ),
+            call(
+                'update-ref',
+                git_ref_root + git_ref,
+                git_ref_value,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            )
+        ])
+        git_mock.push.assert_called_once_with(
+            git_ref_root + git_ref,
+            _cwd=repo_dir,
+            _out=ANY,
+            _err=ANY
+        )
+
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_success_https_url(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'refs/archive/'
+        git_ref = 'v0.42.0'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = 'https://user:pass@git.ploigos.xyz'
+
+        git_mock.tag.side_effect = sh.ErrorReturnCode('git', b'mock out', b'mock git couldn\'t find remote ref error')
+
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+        )
+
+        git_mock.assert_has_calls([
+            call(
+                'check-ref-format',
+                git_ref_root + git_ref,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            ),
+            call(
+                'fetch',
+                '--refmap=""',
+                url,
+                git_ref_root + git_ref + ':' + git_ref_root + git_ref,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            ),
+            call(
+                'update-ref',
+                git_ref_root + git_ref,
+                git_ref_value,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            )
+        ])
+        git_mock.push.bake().assert_called_once_with(
+            git_ref_root + git_ref,
+            _cwd=repo_dir,
+            _out=ANY,
+            _err=ANY
+        )
+
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_success_ref_exists(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'refs/archive/'
+        git_ref = 'v0.42.0'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = 'https://user:pass@git.ploigos.xyz'
+        force_push_ref = True
+
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+            force_push_ref,
+        )
+
+        git_mock.assert_has_calls([
+            call(
+                'check-ref-format',
+                git_ref_root + git_ref,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            ),
+            call(
+                'update-ref',
+                git_ref_root + git_ref,
+                git_ref_value,
+                _cwd=repo_dir,
+                _out=ANY,
+                _err=ANY
+            )
+        ])
+
+        git_mock.push.bake().assert_called_once_with(
+            git_ref_root + git_ref,
+            _cwd=repo_dir,
+            _out=ANY,
+            _err=ANY
+        )
+
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_fail_ref_exists(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'refs/archive/'
+        git_ref = 'v0.42.0'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = 'https://user:pass@git.ploigos.xyz'
+        force_push_ref = False
+
+        # git_mock.tag.side_effect = sh.ErrorReturnCode('git', b'mock out', b'mock git couldn\'t find remote ref error')
+
+        # with self.assertRaisesRegex(
+        #     StepRunnerException,
+        #     re.compile(
+        #         rf"Error creating git reference \({git_ref_root + git_ref}\) for \({git_ref_value}\): Archive reference: {git_ref_root + git_ref} already exists. Con not override with force archive {force_push_ref}."
+        #         r".*RAN: git"
+        #         r".*STDOUT:"
+        #         r".*mock out"
+        #         r".*STDERR:"
+        #         r".*mock git  error",
+        #         re.DOTALL
+        #     )
+        # ):
+
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+            force_push_ref,
+        )
+
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_fail_invalid_ref_root(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'ref/archive/'
+        git_ref = 'v0.42.0'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = 'https://user:pass@git.ploigos.xyz'
+        
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+        )
+
+    @patch('sh.git', create=True)
+    def test_git_ref_and_push_fail_invalid_ref(self, git_mock):
+        repo_dir = '/does/not/matter'
+        git_ref_root = 'refs/archive/'
+        git_ref = 'v0.42.0:123'
+        git_ref_value = 'refs/tags/v0.42.0'
+        url = 'https://user:pass@git.ploigos.xyz'
+        
+        git_update_ref_and_push(
+            repo_dir,
+            git_ref_root,
+            git_ref,
+            git_ref_value,
+            url,
+        )
